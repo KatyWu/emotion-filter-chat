@@ -14,7 +14,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const seenKeys = new Set();
 
 async function deriveKey(roomCode) {
   const enc = new TextEncoder();
@@ -190,6 +189,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
   const msgsRef = useRef(null);
   const isSending = useRef(false);
   const cryptoKey = useRef(null);
+  const seenKeys = useRef(new Set());
   const joinTime = useRef(Date.now());
   const messagesDbRef = useRef(ref(db, `rooms/${roomCode}/messages`));
   const presenceDbRef = useRef(ref(db, `rooms/${roomCode}/presence/${nickname}`));
@@ -211,8 +211,8 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
 
     // 監聽新訊息，只顯示進入之後的
     const unsubMessages = onChildAdded(messagesDbRef.current, async (snapshot) => {
-      if (seenKeys.has(snapshot.key)) return;
-      seenKeys.add(snapshot.key);
+      if (seenKeys.current.has(snapshot.key)) return;
+      seenKeys.current.add(snapshot.key);
 
       const data = snapshot.val();
       if (!data || !cryptoKey.current) return;
@@ -223,6 +223,20 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
         const filteredDecrypted = data.filteredText ? await decrypt(data.filteredText, cryptoKey.current) : null;
         setMessages(prev => {
           if (prev.find(m => m.firebaseKey === snapshot.key)) return prev;
+          // 自己發的訊息：找到暫存泡泡替換掉，不要新增
+          if (data.sender === nickname) {
+            const tempIndex = prev.findIndex(m => m.pending && !m.firebaseKey);
+            if (tempIndex !== -1) {
+              const updated = [...prev];
+              updated[tempIndex] = {
+                ...updated[tempIndex],
+                id: snapshot.key,
+                firebaseKey: snapshot.key,
+                pending: false,
+              };
+              return updated;
+            }
+          }
           return [...prev, {
             id: snapshot.key, firebaseKey: snapshot.key,
             dir: data.sender === nickname ? "sent" : "received",
@@ -296,7 +310,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
-        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={sameLang} />
+        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={samelang} />
         <button onClick={onLeave} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: 12 }}>離開</button>
       </div>
 
