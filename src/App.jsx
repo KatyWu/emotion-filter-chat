@@ -232,6 +232,8 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
   ...updated[tempIndex],
   id: snapshot.key,
   firebaseKey: snapshot.key,
+  text: decrypted,
+  filteredText: filteredDecrypted,
   pending: false,
   filtered: data.filtered,
   translated: data.translated,
