@@ -310,7 +310,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
-        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={samelang} />
+        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={sameLang} />
         <button onClick={onLeave} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: 12 }}>離開</button>
       </div>
 
