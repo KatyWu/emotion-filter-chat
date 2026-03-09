@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, onChildAdded, serverTimestamp } from "firebase/database";
+import { getDatabase, ref, push, onChildAdded, onValue, set, serverTimestamp } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfZaYdhZg5s_axvdKeVTj-WtIM1UHzg2Y",
@@ -89,7 +89,8 @@ async function callAI(prompt) {
   return data.text;
 }
 
-async function processText(text, filter, srcLang, translateTo) {
+async function processText(text, filter, srcLang, targetLang) {
+  const translateTo = targetLang && targetLang !== srcLang ? targetLang : null;
   if (!filter && !translateTo) return { action: "send", text, filtered: false, translated: false };
 
   if (!filter && translateTo) {
@@ -178,26 +179,45 @@ function JoinScreen({ onJoin }) {
   );
 }
 
-let localMsgId = 0;
-
 function ChatRoom({ nickname, roomCode, onLeave }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [filterOn, setFilterOn] = useState(true);
   const [translateOn, setTranslateOn] = useState(false);
   const [lang, setLang] = useState("zh");
-  const [members, setMembers] = useState([nickname]);
+  const [members, setMembers] = useState({});
   const msgsRef = useRef(null);
   const isSending = useRef(false);
   const cryptoKey = useRef(null);
-  const dbRef = useRef(ref(db, `rooms/${roomCode}/messages`));
+  const seenKeys = useRef(new Set());
+  const joinTime = useRef(Date.now());
+  const messagesDbRef = useRef(ref(db, `rooms/${roomCode}/messages`));
+  const presenceDbRef = useRef(ref(db, `rooms/${roomCode}/presence/${nickname}`));
+  const presenceRoomRef = useRef(ref(db, `rooms/${roomCode}/presence`));
+
+  // 把自己的語言同步到 Firebase
+  useEffect(() => {
+    set(presenceDbRef.current, { lang });
+  }, [lang]);
 
   useEffect(() => {
     deriveKey(roomCode).then(k => { cryptoKey.current = k; });
 
-    const unsub = onChildAdded(dbRef.current, async (snapshot) => {
+    // 監聽所有人的語言設定
+    const unsubPresence = onValue(presenceRoomRef.current, (snapshot) => {
+      const data = snapshot.val();
+      if (data) setMembers(data);
+    });
+
+    // 監聽新訊息，只顯示進入之後的
+    const unsubMessages = onChildAdded(messagesDbRef.current, async (snapshot) => {
+      if (seenKeys.current.has(snapshot.key)) return;
+      seenKeys.current.add(snapshot.key);
+
       const data = snapshot.val();
       if (!data || !cryptoKey.current) return;
+      if (data.timestamp && data.timestamp < joinTime.current) return;
+
       try {
         const decrypted = await decrypt(data.text, cryptoKey.current);
         const filteredDecrypted = data.filteredText ? await decrypt(data.filteredText, cryptoKey.current) : null;
@@ -212,11 +232,13 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
             filtered: data.filtered, translated: data.translated,
           }];
         });
-        setMembers(prev => prev.includes(data.sender) ? prev : [...prev, data.sender]);
       } catch (e) { console.error("decrypt failed", e); }
     });
 
-    return () => unsub();
+    return () => {
+      unsubPresence();
+      unsubMessages();
+    };
   }, [roomCode, nickname]);
 
   useEffect(() => {
@@ -228,14 +250,18 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
     isSending.current = true;
     const text = input.trim();
     setInput("");
-    setTimeout(() => { isSending.current = false; }, 300);
+    setTimeout(() => { isSending.current = false; }, 500);
 
-    const translateTo = translateOn ? (lang === "zh" ? "en" : "zh") : null;
-    const tempId = "temp-" + (++localMsgId);
-    setMessages(prev => [...prev, { id: tempId, dir: "sent", sender: nickname, text, filtered: false, translated: false, pending: true }]);
+    const otherLangs = Object.entries(members)
+      .filter(([name]) => name !== nickname)
+      .map(([, v]) => v.lang);
+    const targetLang = translateOn && otherLangs.length > 0 ? otherLangs[0] : null;
+
+    const tempId = "temp-" + Date.now();
+    setMessages(prev => [...prev, { id: tempId, dir: "sent", sender: nickname, text, pending: true }]);
 
     try {
-      const result = await processText(text, filterOn, lang, translateTo);
+      const result = await processText(text, filterOn, lang, targetLang);
       if (result.action === "block") {
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, blocked: true, pending: false } : m));
         isSending.current = false;
@@ -243,7 +269,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
       }
       const encText = await encrypt(text, cryptoKey.current);
       const encFiltered = result.text !== text ? await encrypt(result.text, cryptoKey.current) : null;
-      await push(dbRef.current, {
+      await push(messagesDbRef.current, {
         sender: nickname, text: encText, filteredText: encFiltered,
         filtered: result.filtered, translated: result.translated, timestamp: serverTimestamp(),
       });
@@ -259,17 +285,18 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
   };
 
   const accentColor = "#7c6af7";
+  const sameLang = Object.values(members).every(m => m.lang === lang);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{nickname}</div>
-          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode} · {members.join("、")}</div>
+          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode} · {Object.keys(members).join("、")}</div>
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
-        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" />
+        <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={samelang} />
         <button onClick={onLeave} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: 12 }}>離開</button>
       </div>
 
@@ -315,4 +342,3 @@ export default function App() {
   if (!session) return <JoinScreen onJoin={(nickname, roomCode) => setSession({ nickname, roomCode })} />;
   return <ChatRoom nickname={session.nickname} roomCode={session.roomCode} onLeave={() => setSession(null)} />;
 }
-
