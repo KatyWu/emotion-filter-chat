@@ -229,11 +229,13 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
             if (tempIndex !== -1) {
               const updated = [...prev];
               updated[tempIndex] = {
-                ...updated[tempIndex],
-                id: snapshot.key,
-                firebaseKey: snapshot.key,
-                pending: false,
-              };
+  ...updated[tempIndex],
+  id: snapshot.key,
+  firebaseKey: snapshot.key,
+  pending: false,
+  filtered: data.filtered,
+  translated: data.translated,
+};
               return updated;
             }
           }
