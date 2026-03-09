@@ -225,7 +225,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
           if (prev.find(m => m.firebaseKey === snapshot.key)) return prev;
           // 自己發的訊息：找到暫存泡泡替換掉，不要新增
           if (data.sender === nickname) {
-            const tempIndex = prev.findIndex(m => m.pending && !m.firebaseKey);
+            const tempIndex = prev.findIndex(m => !m.firebaseKey && m.sender === nickname);
             if (tempIndex !== -1) {
               const updated = [...prev];
               updated[tempIndex] = {
