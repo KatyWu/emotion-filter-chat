@@ -163,7 +163,7 @@ function JoinScreen({ onJoin }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100dvh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ width: 320, display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: "#e8e8e8", marginBottom: 4 }}>情緒過濾聊天室</div>
@@ -340,7 +340,7 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
   const sameLang = Object.values(members).every(m => m.lang === lang);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{Object.keys(members).join("、")}</div>
