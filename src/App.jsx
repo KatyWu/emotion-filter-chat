@@ -216,22 +216,21 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
       setMembers(data || {});
     });
 
-    let existingMembers = new Set();
+    let unsubJoin = () => {};
 const unsubOnce = onValue(presenceRoomRef.current, (snapshot) => {
   const data = snapshot.val() || {};
-  existingMembers = new Set(Object.keys(data));
+  const existingMembers = new Set(Object.keys(data));
   Object.keys(data).forEach(name => {
     if (name === nickname) return;
     setMessages(prev => [...prev, { id: "sys-" + Date.now() + Math.random(), type: "system", text: `${name} 現在在聊天室` }]);
   });
   unsubOnce();
-});
-
-const unsubJoin = onChildAdded(presenceRoomRef.current, (snapshot) => {
-  const name = snapshot.key;
-  if (name === nickname) return;
-  if (existingMembers.has(name)) return;
-  setMessages(prev => [...prev, { id: "sys-" + Date.now() + Math.random(), type: "system", text: `${name} 進入了聊天室` }]);
+  unsubJoin = onChildAdded(presenceRoomRef.current, (snapshot) => {
+    const name = snapshot.key;
+    if (name === nickname) return;
+    if (existingMembers.has(name)) return;
+    setMessages(prev => [...prev, { id: "sys-" + Date.now() + Math.random(), type: "system", text: `${name} 進入了聊天室` }]);
+  });
 });
 
 const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
