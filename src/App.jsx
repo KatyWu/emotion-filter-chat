@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, onChildAdded, onValue, set, serverTimestamp } from "firebase/database";
+import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, onValue, set, remove, serverTimestamp } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfZaYdhZg5s_axvdKeVTj-WtIM1UHzg2Y",
@@ -55,7 +55,7 @@ const CLASSIFY_PROMPT_ZH = `你是情緒過濾助手。依照以下步驟處理�
 - 負面或指責式提問 → 改成正向請求（你不能早點說嗎→下次可以提前告訴我嗎）
 - 指責對方的句子 → 改成描述自己感受（你都不在乎我→我覺得我不被重視）
 
-步驟三：保留原本的斷句和標點，原文沒有標點就不要加，不要在句尾加句號
+步驟三：保留原本的斷句和標點，原文沒有標點就不要加，不要在句尾加句號。語氣要口語自然，像朋友講話，不要文謄謄或像書面語
 
 步驟四：如果步驟二完全沒有需要改的，直接原文輸出
 
@@ -75,7 +75,7 @@ Step 2: Process ALL of the following (do not skip any):
 - Negative or accusatory questions → positive requests (why can't you tell me earlier → could you let me know earlier next time)
 - Sentences blaming the other person → describe your own feelings
 
-Step 3: Keep original punctuation and rhythm. No period at end.
+Step 3: Keep original punctuation and rhythm. No period at end. Keep the tone casual and natural, like texting a friend, not formal writing.
 Step 4: If nothing to change, output the original.
 
 Message: `;
@@ -190,6 +190,7 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
   const msgsRef = useRef(null);
   const isSending = useRef(false);
   const cryptoKey = useRef(null);
+  
   const joinTime = useRef(Date.now());
   const messagesDbRef = useRef(ref(db, `rooms/${roomCode}/messages`));
   const presenceDbRef = useRef(ref(db, `rooms/${roomCode}/presence/${nickname}`));
@@ -200,19 +201,36 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
     set(presenceDbRef.current, { lang });
   }, [lang]);
 
+  // 離開時清除 presence
+  useEffect(() => {
+    return () => { remove(presenceDbRef.current); };
+  }, []);
+
   useEffect(() => {
     deriveKey(roomCode).then(k => { cryptoKey.current = k; });
 
-    // 監聽所有人的語言設定
+    // 監聽所有人的語言設定和進出通知
     const unsubPresence = onValue(presenceRoomRef.current, (snapshot) => {
       const data = snapshot.val();
-      if (data) setMembers(data);
+      setMembers(data || {});
+    });
+
+    const unsubJoin = onChildAdded(presenceRoomRef.current, (snapshot) => {
+      const name = snapshot.key;
+      if (name === nickname) return;
+      setMessages(prev => [...prev, { id: "sys-" + Date.now() + Math.random(), type: "system", text: `${name} 進入了聊天室` }]);
+    });
+
+    const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
+      const name = snapshot.key;
+      if (name === nickname) return;
+      setMessages(prev => [...prev, { id: "sys-" + Date.now() + Math.random(), type: "system", text: `${name} 離開了聊天室` }]);
     });
 
     // 監聽新訊息，只顯示進入之後的
     const unsubMessages = onChildAdded(messagesDbRef.current, async (snapshot) => {
       if (seenKeys.has(snapshot.key)) return;
-seenKeys.add(snapshot.key);
+      seenKeys.add(snapshot.key);
 
       const data = snapshot.val();
       if (!data || !cryptoKey.current) return;
@@ -225,19 +243,16 @@ seenKeys.add(snapshot.key);
           if (prev.find(m => m.firebaseKey === snapshot.key)) return prev;
           // 自己發的訊息：找到暫存泡泡替換掉，不要新增
           if (data.sender === nickname) {
+            // preserve filteredText from temp
             const tempIndex = prev.findIndex(m => !m.firebaseKey && m.sender === nickname);
             if (tempIndex !== -1) {
               const updated = [...prev];
               updated[tempIndex] = {
-  ...updated[tempIndex],
-  id: snapshot.key,
-  firebaseKey: snapshot.key,
-  text: decrypted,
-  filteredText: filteredDecrypted,
-  pending: false,
-  filtered: data.filtered,
-  translated: data.translated,
-};
+                ...updated[tempIndex],
+                id: snapshot.key,
+                firebaseKey: snapshot.key,
+                pending: false,
+              };
               return updated;
             }
           }
@@ -255,6 +270,8 @@ seenKeys.add(snapshot.key);
 
     return () => {
       unsubPresence();
+      unsubJoin();
+      unsubLeave();
       unsubMessages();
     };
   }, [roomCode, nickname]);
@@ -310,7 +327,7 @@ seenKeys.add(snapshot.key);
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{nickname}</div>
-          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode}</div>
+          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode} · {Object.keys(members).filter(n => n !== nickname).join("、")}</div>
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
@@ -320,6 +337,9 @@ seenKeys.add(snapshot.key);
 
       <div ref={msgsRef} style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
         {messages.map((msg) => (
+          msg.type === "system" ? (
+            <div key={msg.id} style={{ alignSelf: "center", fontSize: 11, color: "#3a3a3a", padding: "2px 10px" }}>{msg.text}</div>
+          ) : (
           <div key={msg.id} style={{ maxWidth: "75%", display: "flex", flexDirection: "column", gap: 3, alignSelf: msg.dir === "sent" ? "flex-end" : "flex-start", alignItems: msg.dir === "sent" ? "flex-end" : "flex-start" }}>
             {msg.dir === "received" && <div style={{ fontSize: 10, color: "#444", paddingLeft: 4 }}>{msg.sender}</div>}
             {msg.blocked ? (
@@ -340,6 +360,7 @@ seenKeys.add(snapshot.key);
               </>
             )}
           </div>
+          )
         ))}
       </div>
 
