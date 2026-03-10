@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, onValue, set, remove, serverTimestamp } from "firebase/database";
+import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, onValue, set, remove, onDisconnect, serverTimestamp } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAfZaYdhZg5s_axvdKeVTj-WtIM1UHzg2Y",
@@ -198,8 +198,9 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
 
   // 把自己的語言同步到 Firebase
   useEffect(() => {
-    set(presenceDbRef.current, { lang });
-  }, [lang]);
+  set(presenceDbRef.current, { lang });
+  onDisconnect(presenceDbRef.current).remove();
+}, [lang]);
 
   // 離開時清除 presence
   useEffect(() => {
