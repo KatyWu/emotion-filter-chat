@@ -366,14 +366,12 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
                 <div style={{ padding: "9px 14px", borderRadius: 16, fontSize: 14, lineHeight: 1.5, wordBreak: "break-word", background: msg.dir === "sent" ? accentColor : "#1c1c1c", color: msg.dir === "sent" ? "#fff" : "#e0e0e0", opacity: msg.pending ? 0.6 : 1, borderBottomRightRadius: msg.dir === "sent" ? 3 : 16, borderBottomLeftRadius: msg.dir === "received" ? 3 : 16 }}>
                   {msg.text}
                 </div>
-                {msg.dir === "sent" && msg.filteredText && msg.filteredText !== msg.text && (
-                  <div style={{ fontSize: 11, color: "#555", padding: "1px 4px" }}>對方收到：<span style={{ color: "#777" }}>{msg.filteredText}</span></div>
-                )}
-                {(msg.filtered || msg.translated) && (
-                  <div style={{ fontSize: 10, color: "#444", padding: "1px 4px", fontFamily: "monospace" }}>
-                    {[msg.filtered && "已過濾", msg.translated && "已翻譯"].filter(Boolean).join(" · ")}
-                  </div>
-                )}
+               {msg.dir === "sent" && msg.filteredText && msg.filteredText !== msg.text && (
+  <div style={{ fontSize: 11, color: "#555", padding: "1px 4px" }}>對方收到：<span style={{ color: "#777" }}>{msg.filteredText}</span></div>
+)}
+{msg.dir === "received" && msg.filtered && (
+  <div style={{ fontSize: 10, color: "#444", padding: "1px 4px", fontFamily: "monospace" }}>已過濾</div>
+)}
               </>
             )}
           </div>
