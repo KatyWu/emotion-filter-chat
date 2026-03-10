@@ -126,7 +126,7 @@ function Toggle({ on, onToggle, label, activeColor, disabled }) {
   return (
     <div onClick={disabled ? undefined : onToggle} style={{ display: "flex", alignItems: "center", gap: 5, cursor: disabled ? "not-allowed" : "pointer", fontSize: 11, color: disabled ? "#333" : "#666", userSelect: "none", opacity: disabled ? 0.4 : 1 }}>
       <div style={{ width: 26, height: 14, borderRadius: 7, background: on && !disabled ? activeColor : "#2a2a2a", position: "relative", transition: "background 0.2s" }}>
-        <div style={{ position: "absolute", width: 10, height: 10, borderRadius: "50%", top: 2, left: on && !disabled ? 14 : 2, background: on && !disabled ? "#fff" : "#555", transition: "all 0.2s" }} />
+        <div style={{ position: "absolute", width: 10, height: 10, borderRadius: "50%", top: 2, left: on && !disabled ? 14 : 2, background: on && !disabled ? "#fff" : "#888", transition: "all 0.2s" }} />
       </div>
       {label}
     </div>
@@ -163,7 +163,7 @@ function JoinScreen({ onJoin }) {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100dvh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ width: 320, display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 18, fontWeight: 600, color: "#e8e8e8", marginBottom: 4 }}>情緒過濾聊天室</div>
@@ -340,11 +340,11 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
   const sameLang = Object.values(members).every(m => m.lang === lang);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{Object.keys(members).join("、")}</div>
-          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode}</div>
+          <div style={{ fontSize: "clamp(13px, 2vw, 18px)", fontWeight: 500, color: "#e8e8e8" }}>{Object.keys(members).join("、")}</div>
+<div style={{ fontSize: "clamp(11px, 1.5vw, 14px)", color: "#444" }}>房間：{roomCode}</div>
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
