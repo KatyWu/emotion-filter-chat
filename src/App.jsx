@@ -116,9 +116,9 @@ async function processText(text, filter, srcLang, targetLang) {
   try {
     const parsed = JSON.parse(raw);
     if (parsed.action === "block") return { action: "block" };
-    return { action: "send", text: parsed.text, filtered: true, translated: !!translateTo };
+    return { action: "send", text: parsed.text, filtered: parsed.text !== text, translated: !!translateTo };
   } catch {
-    return { action: "send", text: raw, filtered: true, translated: !!translateTo };
+    return { action: "send", text: raw, filtered: raw !== text, translated: !!translateTo };
   }
 }
 
