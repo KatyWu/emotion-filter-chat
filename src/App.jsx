@@ -14,6 +14,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const seenKeys = new Set();
 
 async function deriveKey(roomCode) {
   const enc = new TextEncoder();
@@ -189,7 +190,6 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
   const msgsRef = useRef(null);
   const isSending = useRef(false);
   const cryptoKey = useRef(null);
-  const seenKeys = useRef(new Set());
   const joinTime = useRef(Date.now());
   const messagesDbRef = useRef(ref(db, `rooms/${roomCode}/messages`));
   const presenceDbRef = useRef(ref(db, `rooms/${roomCode}/presence/${nickname}`));
@@ -211,8 +211,8 @@ function ChatRoom({ nickname, roomCode, onLeave }) {
 
     // 監聽新訊息，只顯示進入之後的
     const unsubMessages = onChildAdded(messagesDbRef.current, async (snapshot) => {
-      if (seenKeys.current.has(snapshot.key)) return;
-      seenKeys.current.add(snapshot.key);
+      if (seenKeys.has(snapshot.key)) return;
+seenKeys.add(snapshot.key);
 
       const data = snapshot.val();
       if (!data || !cryptoKey.current) return;
