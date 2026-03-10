@@ -304,10 +304,7 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
     setInput("");
     setTimeout(() => { isSending.current = false; }, 500);
 
-    const otherLangs = Object.entries(members)
-      .filter(([name]) => name !== nickname)
-      .map(([, v]) => v.lang);
-    const targetLang = translateOn && otherLangs.length > 0 ? otherLangs[0] : null;
+    const targetLang = translateOn ? (lang === "zh" ? "en" : "zh") : null;
 
     const tempId = "temp-" + Date.now();
     setMessages(prev => [...prev, { id: tempId, dir: "sent", sender: nickname, text, pending: true }]);
