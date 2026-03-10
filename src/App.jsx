@@ -343,8 +343,8 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#0f0f0f", fontFamily: "'DM Sans', 'Noto Sans TC', sans-serif" }}>
       <div style={{ padding: "12px 18px", borderBottom: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{nickname}</div>
-          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode} · {Object.keys(members).filter(n => n !== nickname).join("、")}</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>{Object.keys(members).join("、")}</div>
+          <div style={{ fontSize: 11, color: "#444" }}>房間：{roomCode}</div>
         </div>
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
