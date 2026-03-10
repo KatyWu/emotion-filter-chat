@@ -124,9 +124,9 @@ async function processText(text, filter, srcLang, targetLang) {
 
 function Toggle({ on, onToggle, label, activeColor, disabled }) {
   return (
-    <div onClick={disabled ? undefined : onToggle} style={{ display: "flex", alignItems: "center", gap: 5, cursor: disabled ? "not-allowed" : "pointer", fontSize: 11, color: disabled ? "#333" : "#666", userSelect: "none", opacity: disabled ? 0.4 : 1 }}>
-      <div style={{ width: 26, height: 14, borderRadius: 7, background: on && !disabled ? activeColor : "#2a2a2a", position: "relative", transition: "background 0.2s" }}>
-        <div style={{ position: "absolute", width: 10, height: 10, borderRadius: "50%", top: 2, left: on && !disabled ? 14 : 2, background: on && !disabled ? "#fff" : "#888", transition: "all 0.2s" }} />
+    <div onClick={disabled ? undefined : onToggle} style={{ display: "flex", alignItems: "center", gap: 6, cursor: disabled ? "not-allowed" : "pointer", fontSize: "clamp(11px, 1.5vw, 16px)", color: disabled ? "#333" : "#888", userSelect: "none", opacity: disabled ? 0.4 : 1 }}>
+      <div style={{ width: "clamp(26px, 3vw, 36px)", height: "clamp(14px, 1.6vw, 20px)", borderRadius: 10, background: on && !disabled ? activeColor : "#2a2a2a", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
+        <div style={{ position: "absolute", width: "clamp(10px, 1.1vw, 14px)", height: "clamp(10px, 1.1vw, 14px)", borderRadius: "50%", top: "50%", transform: "translateY(-50%)", left: on && !disabled ? "calc(100% - clamp(12px, 1.3vw, 16px))" : 3, background: on && !disabled ? "#fff" : "#888", transition: "all 0.2s" }} />
       </div>
       {label}
     </div>
@@ -137,7 +137,7 @@ function LangSelector({ lang, onChange }) {
   return (
     <div style={{ display: "flex", gap: 3 }}>
       {["zh", "en"].map((l) => (
-        <button key={l} onClick={() => onChange(l)} style={{ padding: "2px 7px", borderRadius: 5, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 500, background: lang === l ? "#3a3a3a" : "transparent", color: lang === l ? "#e8e8e8" : "#555", transition: "all 0.15s" }}>
+        <button key={l} onClick={() => onChange(l)} style={{ padding: "2px 7px", borderRadius: 5, border: "none", cursor: "pointer", fontSize: "clamp(11px, 1.5vw, 16px)", fontWeight: 500, background: lang === l ? "#3a3a3a" : "transparent", color: lang === l ? "#e8e8e8" : "#555", transition: "all 0.15s" }}>
           {l === "zh" ? "中文" : "EN"}
         </button>
       ))}
@@ -349,7 +349,7 @@ const unsubLeave = onChildRemoved(presenceRoomRef.current, (snapshot) => {
         <LangSelector lang={lang} onChange={setLang} />
         <Toggle on={filterOn} onToggle={() => setFilterOn(v => !v)} label="過濾" activeColor="#b8960a" />
         <Toggle on={translateOn} onToggle={() => setTranslateOn(v => !v)} label="翻譯" activeColor="#3d7fd4" disabled={sameLang} />
-        <button onClick={onLeave} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: 12 }}>離開</button>
+        <button onClick={onLeave} style={{ background: "none", border: "none", color: "#444", cursor: "pointer", fontSize: "clamp(12px, 1.5vw, 16px)" }}>離開</button>
       </div>
 
       <div ref={msgsRef} style={{ flex: 1, overflowY: "auto", padding: "16px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
